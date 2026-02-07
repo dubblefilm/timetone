@@ -18,10 +18,52 @@
       overflow: hidden;
     }
 
+    /* --- Logo button --- */
+    .logo-btn {
+      position: fixed;
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0;
+      z-index: 10;
+      transition: top 0.6s ease, left 0.6s ease, width 0.6s ease, height 0.6s ease, transform 0.6s ease;
+      /* Collapsed: centered */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 5rem;
+      height: 5rem;
+    }
+
+    .logo-btn img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    body.expanded .logo-btn {
+      top: 1.2rem;
+      left: 1.2rem;
+      transform: none;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    /* --- Main content --- */
     .container {
       text-align: center;
       padding: 3rem 4rem;
-      transition: color 1s ease;
+      transition: color 1s ease, opacity 0.5s ease, transform 0.5s ease;
+      opacity: 0;
+      transform: scale(0.9);
+      pointer-events: none;
+    }
+
+    body.expanded .container {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+      transition: color 1s ease, opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
     }
 
     .time {
@@ -112,6 +154,7 @@
       opacity: 1;
     }
 
+    /* --- Info button (i) --- */
     .info-btn {
       position: fixed;
       bottom: 1.5rem;
@@ -122,16 +165,21 @@
       background: none;
       cursor: pointer;
       padding: 0;
-      opacity: 1;
+      opacity: 0;
+      pointer-events: none;
       transition: opacity 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.4rem;
+      font-style: italic;
+      color: inherit;
     }
 
-    .info-btn img {
-      width: 100%;
-      height: 100%;
+    body.expanded .info-btn {
+      opacity: 0.5;
+      pointer-events: auto;
     }
 
     .info-btn:hover {
@@ -182,10 +230,14 @@
       .colour-value { font-size: 1.1rem; }
       .info-tooltip { width: 16rem; right: 1rem; bottom: 4rem; }
       .info-btn { bottom: 1rem; right: 1rem; }
+      .logo-btn { width: 4rem; height: 4rem; }
+      body.expanded .logo-btn { top: 0.8rem; left: 0.8rem; width: 2rem; height: 2rem; }
     }
   </style>
 </head>
 <body>
+  <button class="logo-btn" id="logo-btn" aria-label="Toggle info"><img src="icon.svg" alt="Timetone"></button>
+
   <div class="container">
     <div class="time" id="time">00:00:00</div>
     <div class="date" id="date"></div>
@@ -214,7 +266,7 @@
     <button class="travel-btn" id="travel-btn">Travel in Color</button>
   </div>
 
-  <button class="info-btn" id="info-btn" aria-label="Information"><img src="icon.svg" alt="Timetone"></button>
+  <button class="info-btn" id="info-btn" aria-label="Information">i</button>
   <div class="info-tooltip" id="info-tooltip">
     <strong>Timetone</strong>
     <p>This page generates a unique colour from the current date and time, updated every second.</p>
@@ -424,6 +476,7 @@
 
       document.body.style.backgroundColor = hex;
       document.querySelector('.container').style.color = textColour;
+      document.querySelector('.info-btn').style.color = textColour;
       const tooltip = document.getElementById('info-tooltip');
       tooltip.style.color = tooltipText;
       tooltip.style.backgroundColor = tooltipBg;
@@ -441,6 +494,16 @@
     updateColour();
     setInterval(updateTime, 1000);
     setInterval(updateColour, 1000);
+
+    // Logo toggle — expand/collapse info
+    const logoBtn = document.getElementById('logo-btn');
+    logoBtn.addEventListener('click', () => {
+      document.body.classList.toggle('expanded');
+      // Dismiss tooltip when collapsing
+      if (!document.body.classList.contains('expanded')) {
+        document.getElementById('info-tooltip').classList.remove('visible');
+      }
+    });
 
     // Info tooltip toggle
     const infoBtn = document.getElementById('info-btn');
