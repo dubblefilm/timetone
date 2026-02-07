@@ -154,7 +154,7 @@
       transition: opacity 0.3s ease, transform 0.3s ease, background-color 1s ease, color 1s ease;
     }
 
-    .info-btn:hover + .info-tooltip {
+    .info-tooltip.visible {
       opacity: 1;
       pointer-events: auto;
       transform: translateY(0);
@@ -432,6 +432,19 @@
     updateColour();
     setInterval(updateTime, 1000);
     setInterval(updateColour, 10000);
+
+    // Info tooltip toggle
+    const infoBtn = document.getElementById('info-btn');
+    const infoTooltip = document.getElementById('info-tooltip');
+    infoBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      infoTooltip.classList.toggle('visible');
+    });
+    document.addEventListener('click', (e) => {
+      if (!infoTooltip.contains(e.target) && !infoBtn.contains(e.target)) {
+        infoTooltip.classList.remove('visible');
+      }
+    });
 
     // Travel in Color
     document.getElementById('travel-btn').addEventListener('click', () => {
