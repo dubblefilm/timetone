@@ -415,11 +415,12 @@
       const textColour = lum > 140 ? '#111' : '#f5f5f5';
 
       const tooltipBg = lum > 140 ? '#222' : '#f0f0f0';
+      const tooltipText = lum > 140 ? '#f5f5f5' : '#111';
 
       document.body.style.backgroundColor = hex;
       document.querySelector('.container').style.color = textColour;
       const tooltip = document.getElementById('info-tooltip');
-      tooltip.style.color = textColour;
+      tooltip.style.color = tooltipText;
       tooltip.style.backgroundColor = tooltipBg;
 
       const pad = n => String(n).padStart(2, '0');
