@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetone — Travel in Color</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Avenir', 'Avenir Next', 'Nunito Sans', 'Helvetica Neue', sans-serif;
+      background: #1a1a1a;
+      color: #f5f5f5;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem 1.5rem;
+      z-index: 5;
+    }
+
+    .back-link {
+      color: #f5f5f5;
+      text-decoration: none;
+      font-size: 1.4rem;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      line-height: 1;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+    }
+
+    .header-date {
+      font-size: 1.2rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair;
+      image-rendering: pixelated;
+      image-rendering: -webkit-optimize-contrast;
+      -ms-interpolation-mode: nearest-neighbor;
+    }
+
+    .popover {
+      position: fixed;
+      background: rgba(30, 30, 30, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 0.6rem;
+      padding: 1rem 1.2rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 10;
+      min-width: 11rem;
+    }
+
+    .popover.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .popover-swatch {
+      width: 100%;
+      height: 2.5rem;
+      border-radius: 0.3rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .popover-time {
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.6rem;
+    }
+
+    .popover-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.3rem;
+    }
+
+    .popover-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .popover-value {
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 600px) {
+      .header { padding: 0.8rem 1rem; }
+      .header-date { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="index.html" class="back-link" aria-label="Back">&larr;</a>
+    <div class="header-date" id="header-date"></div>
+  </div>
+
+  <canvas id="grid" width="240" height="360"></canvas>
+
+  <div class="popover" id="popover">
+    <div class="popover-swatch" id="popover-swatch"></div>
+    <div class="popover-time" id="popover-time">00:00:00</div>
+    <div class="popover-row">
+      <span class="popover-label">HEX</span>
+      <span class="popover-value" id="popover-hex">#000000</span>
+    </div>
+    <div class="popover-row">
+      <span class="popover-label">RGB</span>
+      <span class="popover-value" id="popover-rgb">0, 0, 0</span>
+    </div>
+    <div class="popover-row">
+      <span class="popover-label">Pantone</span>
+      <span class="popover-value" id="popover-pantone">---</span>
+    </div>
+  </div>
+
+  <script>
+    // Pantone colour reference table (subset of common Pantone Coated colours)
+    const PANTONE = [
+      { name: "Yellow C", r: 254, g: 221, b: 0 },
+      { name: "Yellow 012 C", r: 255, g: 214, b: 0 },
+      { name: "Orange 021 C", r: 254, g: 80, b: 0 },
+      { name: "Warm Red C", r: 249, g: 66, b: 58 },
+      { name: "Red 032 C", r: 239, g: 51, b: 64 },
+      { name: "Rubine Red C", r: 206, g: 0, b: 88 },
+      { name: "Rhodamine Red C", r: 225, g: 0, b: 152 },
+      { name: "Purple C", r: 187, g: 41, b: 187 },
+      { name: "Violet C", r: 68, g: 0, b: 153 },
+      { name: "Blue 072 C", r: 16, g: 6, b: 159 },
+      { name: "Reflex Blue C", r: 0, g: 20, b: 137 },
+      { name: "Process Blue C", r: 0, g: 133, b: 202 },
+      { name: "Green C", r: 0, g: 171, b: 132 },
+      { name: "Black C", r: 45, g: 41, b: 38 },
+      { name: "Cool Gray 1 C", r: 217, g: 214, b: 209 },
+      { name: "Cool Gray 5 C", r: 177, g: 179, b: 179 },
+      { name: "Cool Gray 9 C", r: 117, g: 120, b: 123 },
+      { name: "Warm Gray 1 C", r: 215, g: 210, b: 203 },
+      { name: "Warm Gray 5 C", r: 183, g: 176, b: 168 },
+      { name: "185 C", r: 228, g: 0, b: 43 },
+      { name: "186 C", r: 200, g: 16, b: 46 },
+      { name: "199 C", r: 213, g: 43, b: 30 },
+      { name: "1505 C", r: 255, g: 105, b: 0 },
+      { name: "151 C", r: 255, g: 130, b: 0 },
+      { name: "137 C", r: 255, g: 163, b: 0 },
+      { name: "116 C", r: 245, g: 225, b: 0 },
+      { name: "109 C", r: 255, g: 209, b: 0 },
+      { name: "102 C", r: 252, g: 227, b: 0 },
+      { name: "396 C", r: 225, g: 224, b: 0 },
+      { name: "375 C", r: 151, g: 215, b: 0 },
+      { name: "368 C", r: 120, g: 190, b: 32 },
+      { name: "355 C", r: 0, g: 158, b: 73 },
+      { name: "340 C", r: 0, g: 154, b: 120 },
+      { name: "3272 C", r: 0, g: 171, b: 164 },
+      { name: "3262 C", r: 0, g: 191, b: 179 },
+      { name: "319 C", r: 43, g: 203, b: 186 },
+      { name: "311 C", r: 0, g: 189, b: 227 },
+      { name: "306 C", r: 0, g: 169, b: 224 },
+      { name: "299 C", r: 0, g: 163, b: 224 },
+      { name: "285 C", r: 0, g: 114, b: 206 },
+      { name: "2728 C", r: 0, g: 71, b: 187 },
+      { name: "2735 C", r: 47, g: 0, b: 135 },
+      { name: "2685 C", r: 86, g: 0, b: 160 },
+      { name: "2602 C", r: 135, g: 24, b: 157 },
+      { name: "240 C", r: 196, g: 0, b: 171 },
+      { name: "226 C", r: 214, g: 0, b: 147 },
+      { name: "213 C", r: 234, g: 82, b: 161 },
+      { name: "190 C", r: 237, g: 122, b: 155 },
+      { name: "176 C", r: 240, g: 169, b: 181 },
+      { name: "1767 C", r: 243, g: 186, b: 194 },
+      { name: "7401 C", r: 245, g: 225, b: 164 },
+      { name: "7402 C", r: 236, g: 219, b: 134 },
+      { name: "7404 C", r: 245, g: 225, b: 0 },
+      { name: "7405 C", r: 242, g: 205, b: 0 },
+      { name: "7406 C", r: 241, g: 196, b: 0 },
+      { name: "7408 C", r: 244, g: 176, b: 0 },
+      { name: "7409 C", r: 237, g: 170, b: 0 },
+      { name: "7410 C", r: 243, g: 164, b: 121 },
+      { name: "7411 C", r: 229, g: 161, b: 79 },
+      { name: "7412 C", r: 213, g: 144, b: 49 },
+      { name: "7413 C", r: 226, g: 140, b: 0 },
+      { name: "7414 C", r: 203, g: 135, b: 34 },
+      { name: "7455 C", r: 63, g: 67, b: 173 },
+      { name: "7456 C", r: 96, g: 94, b: 191 },
+      { name: "7457 C", r: 193, g: 191, b: 226 },
+      { name: "7462 C", r: 0, g: 61, b: 107 },
+      { name: "7463 C", r: 0, g: 42, b: 78 },
+      { name: "7473 C", r: 39, g: 137, b: 118 },
+      { name: "7474 C", r: 0, g: 110, b: 117 },
+      { name: "7475 C", r: 89, g: 139, b: 139 },
+      { name: "7476 C", r: 0, g: 72, b: 77 },
+      { name: "7481 C", r: 0, g: 185, b: 102 },
+      { name: "7482 C", r: 0, g: 167, b: 80 },
+      { name: "7483 C", r: 36, g: 88, b: 56 },
+      { name: "7489 C", r: 116, g: 170, b: 80 },
+      { name: "7490 C", r: 113, g: 151, b: 66 },
+      { name: "7499 C", r: 242, g: 233, b: 187 },
+      { name: "7500 C", r: 221, g: 212, b: 185 },
+      { name: "7527 C", r: 217, g: 211, b: 198 },
+      { name: "7528 C", r: 198, g: 190, b: 172 },
+      { name: "7529 C", r: 180, g: 172, b: 154 },
+      { name: "7530 C", r: 162, g: 155, b: 140 },
+      { name: "7531 C", r: 120, g: 112, b: 101 },
+      { name: "7532 C", r: 99, g: 90, b: 76 },
+      { name: "7533 C", r: 59, g: 48, b: 36 },
+      { name: "7534 C", r: 210, g: 203, b: 186 },
+      { name: "7535 C", r: 177, g: 172, b: 152 },
+      { name: "7536 C", r: 163, g: 158, b: 135 },
+      { name: "7541 C", r: 213, g: 223, b: 227 },
+      { name: "7542 C", r: 166, g: 187, b: 200 },
+      { name: "7543 C", r: 152, g: 168, b: 179 },
+      { name: "7544 C", r: 118, g: 139, b: 155 },
+      { name: "7545 C", r: 66, g: 85, b: 99 },
+      { name: "7546 C", r: 37, g: 55, b: 70 },
+      { name: "7547 C", r: 19, g: 33, b: 45 },
+    ];
+
+    function nearestPantone(r, g, b) {
+      let best = PANTONE[0];
+      let bestDist = Infinity;
+      for (const p of PANTONE) {
+        const dr = r - p.r;
+        const dg = g - p.g;
+        const db = b - p.b;
+        const dist = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = p;
+        }
+      }
+      return best.name;
+    }
+
+    function toHex(n) {
+      return n.toString(16).padStart(2, '0').toUpperCase();
+    }
+
+    function dayOfYear(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      const diff = date - start;
+      return Math.floor(diff / 86400000);
+    }
+
+    function hslToRgb(h, s, l) {
+      h = ((h % 360) + 360) % 360;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r1, g1, b1;
+      if (h < 60)       { r1 = c; g1 = x; b1 = 0; }
+      else if (h < 120) { r1 = x; g1 = c; b1 = 0; }
+      else if (h < 180) { r1 = 0; g1 = c; b1 = x; }
+      else if (h < 240) { r1 = 0; g1 = x; b1 = c; }
+      else if (h < 300) { r1 = x; g1 = 0; b1 = c; }
+      else              { r1 = c; g1 = 0; b1 = x; }
+      return [
+        Math.round((r1 + m) * 255),
+        Math.round((g1 + m) * 255),
+        Math.round((b1 + m) * 255),
+      ];
+    }
+
+    // --- Setup ---
+    const BLOCKS = 144; // 10-minute blocks in a day
+
+    const params = new URLSearchParams(window.location.search);
+    const dateStr = params.get('date');
+    if (!dateStr) {
+      window.location.href = 'index.html';
+    }
+
+    // Parse as local date (avoid timezone offset from Date.parse)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
+
+    const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+    const doy = dayOfYear(selectedDate);
+    const yearOffset = (year * 137.508) % 360;
+    const hue = ((doy / daysInYear) * 360 + yearOffset) % 360;
+
+    // Display date in header
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('header-date').textContent =
+      selectedDate.toLocaleDateString('en-GB', opts);
+
+    // --- Build 144 colour blocks (average of each 10-minute window) ---
+    const blocks = [];
+    for (let i = 0; i < BLOCKS; i++) {
+      const startMin = i * 10;
+      let rSum = 0, gSum = 0, bSum = 0;
+      for (let min = startMin; min < startMin + 10; min++) {
+        const m = min % 60;
+        const saturation = 0.5 + 0.5 * (m / 59);
+        const lightness = 0.25 + 0.5 * (min / 1439);
+        const [r, g, b] = hslToRgb(hue, saturation, lightness);
+        rSum += r; gSum += g; bSum += b;
+      }
+      const r = Math.round(rSum / 10);
+      const g = Math.round(gSum / 10);
+      const b = Math.round(bSum / 10);
+      const h = Math.floor(startMin / 60);
+      const m = startMin % 60;
+      blocks.push({ r, g, b, h, m, startMin });
+    }
+
+    // --- Find best grid dimensions for viewport ---
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const aspect = vw / vh;
+
+    // 144 factors: 12×12, 16×9, 18×8, 24×6 ...
+    let COLS = 12, ROWS = 12;
+    let bestDiff = Infinity;
+    for (let c = 4; c <= 144; c++) {
+      if (BLOCKS % c !== 0) continue;
+      const r = BLOCKS / c;
+      const diff = Math.abs(c / r - aspect);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        COLS = c;
+        ROWS = r;
+      }
+    }
+
+    // --- Paint canvas (HiDPI-aware) ---
+    const dpr = window.devicePixelRatio || 1;
+    const pixelSize = Math.floor(Math.min(vw / COLS, vh / ROWS));
+    const cssW = COLS * pixelSize;
+    const cssH = ROWS * pixelSize;
+
+    const canvas = document.getElementById('grid');
+    canvas.width = cssW * dpr;
+    canvas.height = cssH * dpr;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.imageSmoothingEnabled = false;
+
+    // gridMap[gridIndex] = block data (for click lookup)
+    const gridMap = new Array(BLOCKS);
+
+    for (let i = 0; i < BLOCKS; i++) {
+      const block = blocks[i];
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      ctx.fillStyle = `rgb(${block.r},${block.g},${block.b})`;
+      ctx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      gridMap[i] = block;
+    }
+
+    // --- Click interaction ---
+    const popover = document.getElementById('popover');
+    const pad = n => String(n).padStart(2, '0');
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const cx = Math.floor(((e.clientX - rect.left) / rect.width) * COLS);
+      const cy = Math.floor(((e.clientY - rect.top) / rect.height) * ROWS);
+
+      if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) return;
+
+      const block = gridMap[cy * COLS + cx];
+      if (!block) return;
+
+      const { r, g, b, h, m } = block;
+      const endM = (m + 10) % 60;
+      const endH = m + 10 >= 60 ? h + 1 : h;
+
+      const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      const pantone = nearestPantone(r, g, b);
+
+      document.getElementById('popover-swatch').style.backgroundColor = hex;
+      document.getElementById('popover-time').textContent =
+        `${pad(h)}:${pad(m)} – ${pad(endH)}:${pad(endM)}`;
+      document.getElementById('popover-hex').textContent = hex;
+      document.getElementById('popover-rgb').textContent = `${r}, ${g}, ${b}`;
+      document.getElementById('popover-pantone').textContent = pantone;
+
+      // Position popover near click, keeping it on screen
+      let left = e.clientX + 16;
+      let top = e.clientY - 60;
+      const pw = 200;
+      const ph = 180;
+
+      if (left + pw > window.innerWidth) left = e.clientX - pw - 16;
+      if (top < 8) top = 8;
+      if (top + ph > window.innerHeight) top = window.innerHeight - ph - 8;
+
+      popover.style.left = left + 'px';
+      popover.style.top = top + 'px';
+      popover.classList.add('visible');
+    });
+
+    // Dismiss popover
+    document.addEventListener('click', (e) => {
+      if (!canvas.contains(e.target) && !popover.contains(e.target)) {
+        popover.classList.remove('visible');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        popover.classList.remove('visible');
+      }
+    });
+  </script>
+</body>
+</html>
