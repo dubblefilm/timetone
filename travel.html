@@ -314,26 +314,18 @@
     document.getElementById('header-date').textContent =
       selectedDate.toLocaleDateString('en-GB', opts);
 
-    // --- Build 144 colour blocks (average of each 10-minute window) ---
+    // --- Build 144 colour blocks (midpoint of each 10-minute window) ---
     const blocks = [];
     for (let i = 0; i < BLOCKS; i++) {
       const startMin = i * 10;
-      let rSum = 0, gSum = 0, bSum = 0;
-      for (let min = startMin; min < startMin + 10; min++) {
-        // Golden angle hop per minute — matches index.html formula
-        const minuteHue = (min * 137.508 + yearOffset + dayOffset) % 360;
-        const m = min % 60;
-        const saturation = 0.5 + 0.5 * (m / 59);
-        const lightness = 0.25 + 0.5 * (min / 1439);
-        const [r, g, b] = hslToRgb(minuteHue, saturation, lightness);
-        rSum += r; gSum += g; bSum += b;
-      }
-      const r = Math.round(rSum / 10);
-      const g = Math.round(gSum / 10);
-      const b = Math.round(bSum / 10);
+      const midMin = startMin + 5;
+      const minuteHue = (midMin * 137.508 + yearOffset + dayOffset) % 360;
+      const m = midMin % 60;
+      const saturation = 0.5 + 0.5 * (m / 59);
+      const lightness = 0.25 + 0.5 * (midMin / 1439);
+      const [r, g, b] = hslToRgb(minuteHue, saturation, lightness);
       const h = Math.floor(startMin / 60);
-      const m = startMin % 60;
-      blocks.push({ r, g, b, h, m, startMin });
+      blocks.push({ r, g, b, h, m: startMin % 60, startMin });
     }
 
     // Fisher-Yates shuffle
