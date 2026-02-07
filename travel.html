@@ -307,7 +307,10 @@
 
     const doy = dayOfYear(selectedDate);
     const yearOffset = (year * 137.508) % 360;
-    const dayOffset = (doy * 47.1) % 360;
+
+    // Each day gets a base hue (golden angle from day-of-year) — its "vibe"
+    const dayBaseHue = (doy * 137.508 + yearOffset) % 360;
+    const HUE_RANGE = 120; // degrees of spectrum per day
 
     // Display date in header
     const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -319,7 +322,8 @@
     for (let i = 0; i < BLOCKS; i++) {
       const startMin = i * 10;
       const midMin = startMin + 5;
-      const minuteHue = (midMin * 137.508 + yearOffset + dayOffset) % 360;
+      // Minutes spread within the day's 120° neighborhood via golden angle
+      const minuteHue = (dayBaseHue + (midMin * 137.508) % HUE_RANGE) % 360;
       const m = midMin % 60;
       const saturation = 0.5 + 0.5 * (m / 59);
       const lightness = 0.25 + 0.5 * (midMin / 1439);
