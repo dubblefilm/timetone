@@ -451,7 +451,7 @@
 
       const pad = n => String(n).padStart(2, '0');
       document.getElementById('time').textContent =
-        `${pad(h)}:${pad(m)}`;
+        `${pad(h)}:${pad(m)}:${pad(s)}`;
 
       const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('date').textContent =
