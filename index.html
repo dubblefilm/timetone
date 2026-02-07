@@ -112,8 +112,10 @@
 
     .travel-date {
       position: absolute;
-      opacity: 0;
-      pointer-events: none;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
     }
 
     .info-btn {
@@ -435,7 +437,12 @@
     const travelDate = document.getElementById('travel-date');
 
     travelBtn.addEventListener('click', () => {
-      travelDate.showPicker();
+      if (travelDate.showPicker) {
+        travelDate.showPicker();
+      } else {
+        travelDate.focus();
+        travelDate.click();
+      }
     });
 
     travelDate.addEventListener('change', () => {

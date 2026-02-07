@@ -384,10 +384,10 @@
     const popover = document.getElementById('popover');
     const pad = n => String(n).padStart(2, '0');
 
-    canvas.addEventListener('click', (e) => {
+    function handleTap(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
-      const cx = Math.floor(((e.clientX - rect.left) / rect.width) * COLS);
-      const cy = Math.floor(((e.clientY - rect.top) / rect.height) * ROWS);
+      const cx = Math.floor(((clientX - rect.left) / rect.width) * COLS);
+      const cy = Math.floor(((clientY - rect.top) / rect.height) * ROWS);
 
       if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) return;
 
@@ -408,27 +408,36 @@
       document.getElementById('popover-rgb').textContent = `${r}, ${g}, ${b}`;
       document.getElementById('popover-pantone').textContent = pantone;
 
-      // Position popover near click, keeping it on screen
-      let left = e.clientX + 16;
-      let top = e.clientY - 60;
+      // Position popover near tap, keeping it on screen
+      let left = clientX + 16;
+      let top = clientY - 60;
       const pw = 200;
       const ph = 180;
 
-      if (left + pw > window.innerWidth) left = e.clientX - pw - 16;
+      if (left + pw > window.innerWidth) left = clientX - pw - 16;
       if (top < 8) top = 8;
       if (top + ph > window.innerHeight) top = window.innerHeight - ph - 8;
 
       popover.style.left = left + 'px';
       popover.style.top = top + 'px';
       popover.classList.add('visible');
+    }
+
+    canvas.addEventListener('click', (e) => handleTap(e.clientX, e.clientY));
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      handleTap(t.clientX, t.clientY);
     });
 
     // Dismiss popover
-    document.addEventListener('click', (e) => {
-      if (!canvas.contains(e.target) && !popover.contains(e.target)) {
+    function dismissPopover(target) {
+      if (!canvas.contains(target) && !popover.contains(target)) {
         popover.classList.remove('visible');
       }
-    });
+    }
+    document.addEventListener('click', (e) => dismissPopover(e.target));
+    document.addEventListener('touchstart', (e) => dismissPopover(e.target));
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
