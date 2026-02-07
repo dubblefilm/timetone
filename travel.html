@@ -332,6 +332,13 @@
       blocks.push({ r, g, b, h, m: startMin % 60, startMin });
     }
 
+    // Sort by luminance (light to dark)
+    blocks.sort((a, b) => {
+      const lumA = 0.299 * a.r + 0.587 * a.g + 0.114 * a.b;
+      const lumB = 0.299 * b.r + 0.587 * b.g + 0.114 * b.b;
+      return lumB - lumA;
+    });
+
     // --- Find best grid dimensions for viewport ---
     const vw = window.innerWidth;
     const vh = window.innerHeight;
