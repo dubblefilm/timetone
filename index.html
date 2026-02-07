@@ -27,10 +27,10 @@
       padding: 0;
       z-index: 10;
       transition: top 0.6s ease, left 0.6s ease, width 0.6s ease, height 0.6s ease, transform 0.6s ease;
-      /* Collapsed: centered */
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(0deg);
+      /* Collapsed: centered via calc (no translate needed, frees transform for spin) */
+      top: calc(50% - 2.5rem);
+      left: calc(50% - 2.5rem);
+      transform: rotate(0deg);
       width: 5rem;
       height: 5rem;
     }
@@ -230,7 +230,7 @@
       .colour-value { font-size: 1.1rem; }
       .info-tooltip { width: 16rem; right: 1rem; bottom: 4rem; }
       .info-btn { bottom: 1rem; right: 1rem; }
-      .logo-btn { width: 4rem; height: 4rem; }
+      .logo-btn { width: 4rem; height: 4rem; top: calc(50% - 2rem); left: calc(50% - 2rem); }
       body.expanded .logo-btn { top: 0.8rem; left: 0.8rem; width: 2rem; height: 2rem; }
     }
   </style>
