@@ -305,10 +305,9 @@
     const [year, month, day] = dateStr.split('-').map(Number);
     const selectedDate = new Date(year, month - 1, day);
 
-    const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
     const doy = dayOfYear(selectedDate);
     const yearOffset = (year * 137.508) % 360;
-    const hue = ((doy / daysInYear) * 360 + yearOffset) % 360;
+    const dayOffset = (doy * 47.1) % 360;
 
     // Display date in header
     const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -321,10 +320,12 @@
       const startMin = i * 10;
       let rSum = 0, gSum = 0, bSum = 0;
       for (let min = startMin; min < startMin + 10; min++) {
+        // Golden angle hop per minute — matches index.html formula
+        const minuteHue = (min * 137.508 + yearOffset + dayOffset) % 360;
         const m = min % 60;
         const saturation = 0.5 + 0.5 * (m / 59);
         const lightness = 0.25 + 0.5 * (min / 1439);
-        const [r, g, b] = hslToRgb(hue, saturation, lightness);
+        const [r, g, b] = hslToRgb(minuteHue, saturation, lightness);
         rSum += r; gSum += g; bSum += b;
       }
       const r = Math.round(rSum / 10);

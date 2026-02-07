@@ -247,9 +247,10 @@
     function dayColour(year, month, day) {
       const date = new Date(year, month, day);
       const doy = dayOfYear(date);
-      const totalDays = daysInYear(year);
       const yearOffset = (year * 137.508) % 360;
-      const hue = ((doy / totalDays) * 360 + yearOffset) % 360;
+      const dayOffset = (doy * 47.1) % 360;
+      // Noon (minute 720) as representative colour, golden angle per minute
+      const hue = (720 * 137.508 + yearOffset + dayOffset) % 360;
       const saturation = 0.75;
       const lightness = 0.5;
       return hslToRgb(hue, saturation, lightness);
