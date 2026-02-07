@@ -371,7 +371,21 @@
       ];
     }
 
-    function update() {
+    function updateTime() {
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      const s = now.getSeconds();
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('time').textContent =
+        `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+      const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').textContent =
+        now.toLocaleDateString('en-GB', opts);
+    }
+
+    function updateColour() {
       const now = new Date();
       const h = now.getHours();
       const m = now.getMinutes();
@@ -381,12 +395,11 @@
         now.getFullYear() % 100 !== 0) || now.getFullYear() % 400 === 0)
         ? 366 : 365;
 
-      // Day of year rotates the hue, golden angle offset per year makes each year unique
       const yearOffset = (now.getFullYear() * 137.508) % 360;
       const hue = ((doy / daysInYear) * 360 + yearOffset) % 360;
       const timeSeconds = h * 3600 + m * 60 + s;
-      const saturation = 0.5 + 0.5 * (m / 59);           // 50-100% from minutes
-      const lightness  = 0.25 + 0.5 * (timeSeconds / 86399); // 25-75% from time of day
+      const saturation = 0.5 + 0.5 * (m / 59);
+      const lightness  = 0.25 + 0.5 * (timeSeconds / 86399);
 
       const [r, g, b] = hslToRgb(hue, saturation, lightness);
 
@@ -404,14 +417,6 @@
       tooltip.style.color = tooltipText;
       tooltip.style.backgroundColor = tooltipBg;
 
-      const pad = n => String(n).padStart(2, '0');
-      document.getElementById('time').textContent =
-        `${pad(h)}:${pad(m)}:${pad(s)}`;
-
-      const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      document.getElementById('date').textContent =
-        now.toLocaleDateString('en-GB', opts);
-
       document.getElementById('hex').textContent = hex;
       document.getElementById('rgb').textContent = `${r}, ${g}, ${b}`;
       document.getElementById('pantone').textContent = pantone;
@@ -421,8 +426,10 @@
       document.getElementById('swatch-b').style.backgroundColor = `rgb(0,0,${b})`;
     }
 
-    update();
-    setInterval(update, 1000);
+    updateTime();
+    updateColour();
+    setInterval(updateTime, 1000);
+    setInterval(updateColour, 10000);
 
     // Travel in Color
     document.getElementById('travel-btn').addEventListener('click', () => {
