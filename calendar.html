@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timetone — Calendar</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Avenir', 'Avenir Next', 'Nunito Sans', 'Helvetica Neue', sans-serif;
+      background: #1a1a1a;
+      color: #f5f5f5;
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.2rem 1.5rem;
+      z-index: 5;
+      background: #1a1a1a;
+    }
+
+    .back-link {
+      color: #f5f5f5;
+      text-decoration: none;
+      font-size: 1.4rem;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      line-height: 1;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+    }
+
+    .year-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .year-nav button {
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 1.3rem;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      line-height: 1;
+      padding: 0.2rem 0.4rem;
+    }
+
+    .year-nav button:hover {
+      opacity: 1;
+    }
+
+    .year-label {
+      font-size: 1.2rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.8;
+      min-width: 4rem;
+      text-align: center;
+    }
+
+    .calendar-body {
+      padding: 4.5rem 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      max-width: 72rem;
+      margin: 0 auto;
+    }
+
+    .month-block {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 0.6rem;
+      padding: 0.8rem;
+    }
+
+    .month-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .month-name {
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .month-swatch {
+      flex: 1;
+      height: 0.4rem;
+      border-radius: 0.2rem;
+    }
+
+    .day-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 2px;
+    }
+
+    .day-label {
+      font-size: 0.55rem;
+      text-align: center;
+      opacity: 0.4;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.15rem 0;
+    }
+
+    .day-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.2rem;
+      text-decoration: none;
+      font-size: 0.65rem;
+      font-weight: bold;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .day-cell:hover {
+      transform: scale(1.2);
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .day-cell.today {
+      outline: 2px solid #f5f5f5;
+      outline-offset: 1px;
+    }
+
+    .day-cell.empty {
+      background: none;
+    }
+
+    .day-cell.empty:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    @media (max-width: 1024px) {
+      .calendar-body {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .calendar-body {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 4.5rem 1rem 1.5rem;
+      }
+      .header { padding: 0.8rem 1rem; }
+    }
+
+    @media (max-width: 400px) {
+      .calendar-body {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="index.html" class="back-link" aria-label="Back">&larr;</a>
+    <div class="year-nav">
+      <button id="prev-year" aria-label="Previous year">&larr;</button>
+      <span class="year-label" id="year-label"></span>
+      <button id="next-year" aria-label="Next year">&rarr;</button>
+    </div>
+  </div>
+
+  <div class="calendar-body" id="calendar-body"></div>
+
+  <script>
+    // --- Shared colour functions (duplicated, no build system) ---
+
+    function hslToRgb(h, s, l) {
+      h = ((h % 360) + 360) % 360;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r1, g1, b1;
+      if (h < 60)       { r1 = c; g1 = x; b1 = 0; }
+      else if (h < 120) { r1 = x; g1 = c; b1 = 0; }
+      else if (h < 180) { r1 = 0; g1 = c; b1 = x; }
+      else if (h < 240) { r1 = 0; g1 = x; b1 = c; }
+      else if (h < 300) { r1 = x; g1 = 0; b1 = c; }
+      else              { r1 = c; g1 = 0; b1 = x; }
+      return [
+        Math.round((r1 + m) * 255),
+        Math.round((g1 + m) * 255),
+        Math.round((b1 + m) * 255),
+      ];
+    }
+
+    function dayOfYear(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      const diff = date - start;
+      return Math.floor(diff / 86400000);
+    }
+
+    function luminance(r, g, b) {
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    // --- Calendar logic ---
+
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
+    function daysInYear(year) {
+      return ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+    }
+
+    function dayColour(year, month, day) {
+      const date = new Date(year, month, day);
+      const doy = dayOfYear(date);
+      const totalDays = daysInYear(year);
+      const yearOffset = (year * 137.508) % 360;
+      const hue = ((doy / totalDays) * 360 + yearOffset) % 360;
+      const saturation = 0.75;
+      const lightness = 0.5;
+      return hslToRgb(hue, saturation, lightness);
+    }
+
+    function formatDate(year, month, day) {
+      const mm = String(month + 1).padStart(2, '0');
+      const dd = String(day).padStart(2, '0');
+      return `${year}-${mm}-${dd}`;
+    }
+
+    function renderCalendar(year) {
+      const body = document.getElementById('calendar-body');
+      body.innerHTML = '';
+      document.getElementById('year-label').textContent = year;
+
+      const today = new Date();
+      const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
+
+      for (let month = 0; month < 12; month++) {
+        const block = document.createElement('div');
+        block.className = 'month-block';
+
+        // Month header with name and gradient swatch
+        const header = document.createElement('div');
+        header.className = 'month-header';
+
+        const name = document.createElement('span');
+        name.className = 'month-name';
+        name.textContent = MONTH_NAMES[month];
+        header.appendChild(name);
+
+        // Gradient swatch: first day → mid-month → last day
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const midDay = Math.ceil(lastDay / 2);
+        const [r1, g1, b1] = dayColour(year, month, 1);
+        const [r2, g2, b2] = dayColour(year, month, midDay);
+        const [r3, g3, b3] = dayColour(year, month, lastDay);
+        const swatch = document.createElement('div');
+        swatch.className = 'month-swatch';
+        swatch.style.background = `linear-gradient(to right, rgb(${r1},${g1},${b1}), rgb(${r2},${g2},${b2}), rgb(${r3},${g3},${b3}))`;
+        header.appendChild(swatch);
+
+        block.appendChild(header);
+
+        // Day-of-week labels
+        const labels = document.createElement('div');
+        labels.className = 'day-labels';
+        for (const dl of DAY_LABELS) {
+          const lbl = document.createElement('span');
+          lbl.className = 'day-label';
+          lbl.textContent = dl;
+          labels.appendChild(lbl);
+        }
+        block.appendChild(labels);
+
+        // Day grid
+        const grid = document.createElement('div');
+        grid.className = 'day-grid';
+
+        // Find which day of week the 1st falls on (Mon=0 ... Sun=6)
+        const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
+
+        // Empty cells before the 1st
+        for (let e = 0; e < firstDow; e++) {
+          const empty = document.createElement('span');
+          empty.className = 'day-cell empty';
+          grid.appendChild(empty);
+        }
+
+        // Day cells
+        for (let d = 1; d <= lastDay; d++) {
+          const [r, g, b] = dayColour(year, month, d);
+          const lum = luminance(r, g, b);
+          const textCol = lum > 140 ? '#111' : '#f5f5f5';
+          const dateStr = formatDate(year, month, d);
+
+          const cell = document.createElement('a');
+          cell.className = 'day-cell';
+          cell.href = `travel.html?date=${dateStr}`;
+          cell.textContent = d;
+          cell.style.backgroundColor = `rgb(${r},${g},${b})`;
+          cell.style.color = textCol;
+
+          if (dateStr === todayStr) {
+            cell.classList.add('today');
+          }
+
+          grid.appendChild(cell);
+        }
+
+        block.appendChild(grid);
+        body.appendChild(block);
+      }
+    }
+
+    // --- Year navigation ---
+
+    const params = new URLSearchParams(window.location.search);
+    let currentYear = parseInt(params.get('year'), 10) || new Date().getFullYear();
+
+    function setYear(y) {
+      currentYear = y;
+      renderCalendar(currentYear);
+      history.replaceState(null, '', `?year=${currentYear}`);
+    }
+
+    document.getElementById('prev-year').addEventListener('click', () => setYear(currentYear - 1));
+    document.getElementById('next-year').addEventListener('click', () => setYear(currentYear + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') setYear(currentYear - 1);
+      if (e.key === 'ArrowRight') setYear(currentYear + 1);
+    });
+
+    // Initial render
+    renderCalendar(currentYear);
+  </script>
+</body>
+</html>
