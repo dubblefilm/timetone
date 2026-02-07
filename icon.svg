@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle - deep navy -->
+  <circle cx="100" cy="100" r="100" fill="#264653"/>
+  
+  <!-- Horizontal stroke (coral) - left of overlap -->
+  <rect x="30" y="52" width="57" height="26" fill="#FF6B6B"/>
+  <!-- Horizontal stroke (coral) - right of overlap -->
+  <rect x="113" y="52" width="57" height="26" fill="#FF6B6B"/>
+  
+  <!-- Vertical stroke (teal) - below overlap -->
+  <rect x="87" y="78" width="26" height="98" fill="#4ECDC4"/>
+  
+  <!-- Overlap zone - blended purple -->
+  <rect x="87" y="52" width="26" height="26" fill="#9B7DC4"/>
+</svg>

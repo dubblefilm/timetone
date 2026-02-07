@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Timetone</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -13,7 +14,7 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      transition: background-color 1s ease;
+      transition: background-color 2s ease;
       overflow: hidden;
     }
 
@@ -77,7 +78,7 @@
       width: 2.5rem;
       height: 2.5rem;
       border-radius: 50%;
-      transition: background-color 1s ease;
+      transition: background-color 2s ease;
       opacity: 0.5;
     }
 
@@ -121,19 +122,20 @@
       right: 1.5rem;
       width: 2.2rem;
       height: 2.2rem;
-      border-radius: 50%;
-      border: 1.5px solid currentColor;
+      border: none;
       background: none;
       cursor: pointer;
-      font-family: 'Georgia', serif;
-      font-style: italic;
-      font-size: 1.1rem;
-      line-height: 1;
+      padding: 0;
       opacity: 0.45;
-      transition: opacity 0.3s ease, color 1s ease;
+      transition: opacity 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .info-btn img {
+      width: 100%;
+      height: 100%;
     }
 
     .info-btn:hover {
@@ -217,7 +219,7 @@
     <input type="date" class="travel-date" id="travel-date">
   </div>
 
-  <button class="info-btn" id="info-btn" aria-label="Information">i</button>
+  <button class="info-btn" id="info-btn" aria-label="Information"><img src="icon.svg" alt="Timetone"></button>
   <div class="info-tooltip" id="info-tooltip">
     <strong>Timetone</strong>
     <p>This page generates a unique colour from the current date and time, updated every second.</p>
@@ -404,7 +406,6 @@
 
       document.body.style.backgroundColor = hex;
       document.querySelector('.container').style.color = textColour;
-      document.getElementById('info-btn').style.color = textColour;
       const tooltip = document.getElementById('info-tooltip');
       tooltip.style.color = textColour;
       tooltip.style.backgroundColor = tooltipBg;
