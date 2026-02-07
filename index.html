@@ -398,9 +398,10 @@
         ? 366 : 365;
 
       const yearOffset = (now.getFullYear() * 137.508) % 360;
-      const hue = ((doy / daysInYear) * 360 + yearOffset) % 360;
+      const baseHue = ((doy / daysInYear) * 360 + yearOffset) % 360;
+      const hue = (baseHue + (s / 59) * 30) % 360;  // +30° sweep each minute
       const timeSeconds = h * 3600 + m * 60 + s;
-      const saturation = 0.5 + 0.5 * ((m * 60 + s) / 3599);  // 50-100% across each hour
+      const saturation = 0.5 + 0.5 * (m / 59);           // 50-100% across each hour
       const lightness  = 0.25 + 0.5 * (timeSeconds / 86399);
 
       const [r, g, b] = hslToRgb(hue, saturation, lightness);
