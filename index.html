@@ -618,7 +618,7 @@
     logoImg.src = 'icon.svg';
 
     function drawCard(data) {
-      const W = 1080, H = 1350;
+      const W = 1080, H = 1080;
       cardCanvas.width = W;
       cardCanvas.height = H;
       const ctx = cardCanvas.getContext('2d');
@@ -628,64 +628,66 @@
       ctx.fillRect(0, 0, W, H);
 
       const textCol = data.lum > 140 ? '#111' : '#f5f5f5';
-      const subCol = data.lum > 140 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+      const subCol = data.lum > 140 ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.45)';
       ctx.textAlign = 'center';
 
       // Logo
-      const logoSize = 120;
-      ctx.drawImage(logoImg, (W - logoSize) / 2, 180, logoSize, logoSize);
+      const logoSize = 100;
+      ctx.drawImage(logoImg, (W - logoSize) / 2, 70, logoSize, logoSize);
 
       // "Here is your Timetone"
       ctx.fillStyle = subCol;
-      ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.font = '300 38px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '4px';
-      ctx.fillText('Here is your Timetone', W / 2, 380);
+      ctx.fillText('Here is your Timetone', W / 2, 230);
 
       // Time
       ctx.fillStyle = textCol;
-      ctx.font = 'bold 120px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.font = 'bold 160px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '8px';
-      ctx.fillText(data.time, W / 2, 540);
+      ctx.fillText(data.time, W / 2, 390);
 
       // Date
       ctx.fillStyle = subCol;
-      ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.font = '300 36px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '6px';
-      ctx.fillText(data.date.toUpperCase(), W / 2, 600);
+      ctx.fillText(data.date.toUpperCase(), W / 2, 450);
 
-      // Divider line
-      ctx.strokeStyle = subCol;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(W / 2 - 160, 660);
-      ctx.lineTo(W / 2 + 160, 660);
-      ctx.stroke();
-
-      // Colour values
-      ctx.letterSpacing = '3px';
+      // Colour values — horizontal row
       const labels = ['HEX', 'RGB', 'PANTONE'];
       const values = [data.hex, data.rgb, data.pantone];
-      let y = 730;
+      const colX = [W / 2 - 300, W / 2, W / 2 + 300];
 
       for (let i = 0; i < 3; i++) {
         ctx.fillStyle = subCol;
-        ctx.font = '300 20px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+        ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
         ctx.letterSpacing = '6px';
-        ctx.fillText(labels[i], W / 2, y);
+        ctx.fillText(labels[i], colX[i], 560);
 
         ctx.fillStyle = textCol;
-        ctx.font = 'bold 36px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
-        ctx.letterSpacing = '3px';
-        ctx.fillText(values[i], W / 2, y + 48);
-
-        y += 120;
+        ctx.font = 'bold 42px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+        ctx.letterSpacing = '2px';
+        ctx.fillText(values[i], colX[i], 610);
       }
 
-      // Footer
+      // Divider
+      ctx.strokeStyle = subCol;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 200, 670);
+      ctx.lineTo(W / 2 + 200, 670);
+      ctx.stroke();
+
+      // Mapping description
       ctx.fillStyle = subCol;
-      ctx.font = '300 18px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.font = '300 24px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.letterSpacing = '3px';
+      ctx.fillText('Day \u2192 Hue  \u00B7  Minutes \u2192 Saturation  \u00B7  Time \u2192 Lightness', W / 2, 720);
+
+      // Footer
+      ctx.font = '300 26px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '5px';
-      ctx.fillText('TIMETONE.NONEED.DEV', W / 2, H - 60);
+      ctx.fillText('TIMETONE.NONEED.DEV', W / 2, H - 50);
     }
 
     document.getElementById('capture-btn').addEventListener('click', () => {
