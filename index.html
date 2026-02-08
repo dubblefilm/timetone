@@ -27,7 +27,6 @@
       padding: 0;
       z-index: 10;
       transition: top 0.6s ease, left 0.6s ease, width 0.6s ease, height 0.6s ease, transform 0.6s ease;
-      /* Collapsed: centered via calc (no translate needed, frees transform for spin) */
       top: calc(50% - 2.5rem);
       left: calc(50% - 2.5rem);
       transform: rotate(0deg);
@@ -134,8 +133,15 @@
       line-height: 1.8;
     }
 
-    .travel-btn {
+    .btn-row {
       margin-top: 1.8rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .travel-btn, .capture-btn {
       padding: 0.6rem 1.6rem;
       border: 1.5px solid currentColor;
       border-radius: 2rem;
@@ -150,7 +156,7 @@
       transition: opacity 0.3s ease;
     }
 
-    .travel-btn:hover {
+    .travel-btn:hover, .capture-btn:hover {
       opacity: 1;
     }
 
@@ -223,6 +229,73 @@
       margin-bottom: 0;
     }
 
+    /* --- Card overlay --- */
+    .card-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .card-overlay.visible {
+      display: flex;
+    }
+
+    .card-canvas {
+      max-width: 90vw;
+      max-height: 70vh;
+      border-radius: 0.4rem;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .card-action-btn {
+      padding: 0.6rem 1.6rem;
+      border: 1.5px solid #f5f5f5;
+      border-radius: 2rem;
+      background: none;
+      color: #f5f5f5;
+      font-family: 'Avenir', 'Avenir Next', 'Nunito Sans', 'Helvetica Neue', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+
+    .card-action-btn:hover {
+      opacity: 1;
+    }
+
+    .card-close {
+      position: fixed;
+      top: 1.2rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: #f5f5f5;
+      font-size: 2rem;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      line-height: 1;
+      z-index: 101;
+    }
+
+    .card-close:hover {
+      opacity: 1;
+    }
+
     @media (max-width: 600px) {
       .time { font-size: 3rem; }
       .container { padding: 2rem 1.5rem; }
@@ -263,7 +336,10 @@
     <div class="mapping">
       Day of Year &rarr; Hue &nbsp;&middot;&nbsp; Minutes &rarr; Saturation &nbsp;&middot;&nbsp; Time of Day &rarr; Lightness
     </div>
-    <button class="travel-btn" id="travel-btn">Travel in Color</button>
+    <div class="btn-row">
+      <button class="travel-btn" id="travel-btn">Travel in Color</button>
+      <button class="capture-btn" id="capture-btn">Capture</button>
+    </div>
   </div>
 
   <button class="info-btn" id="info-btn" aria-label="Information">i</button>
@@ -272,6 +348,15 @@
     <p>This page generates a unique colour from the current date and time, updated every second.</p>
     <p>The <em>day of the year</em> (1&ndash;366) sets the hue, rotating through the full colour spectrum over the calendar year. <em>Minutes</em> control the saturation (50&ndash;100%), and the <em>time of day</em> controls lightness (darker at midnight, brighter by evening).</p>
     <p>The resulting colour is displayed as HEX, RGB, and the nearest matching Pantone reference.</p>
+  </div>
+
+  <div class="card-overlay" id="card-overlay">
+    <button class="card-close" id="card-close">&times;</button>
+    <canvas id="card-canvas" width="1080" height="1350"></canvas>
+    <div class="card-actions">
+      <button class="card-action-btn" id="download-png">Download PNG</button>
+      <button class="card-action-btn" id="download-pdf">Download PDF</button>
+    </div>
   </div>
 
   <script>
@@ -381,7 +466,6 @@
         const dr = r - p.r;
         const dg = g - p.g;
         const db = b - p.b;
-        // Weighted Euclidean distance (human perception weighting)
         const dist = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
         if (dist < bestDist) {
           bestDist = dist;
@@ -405,7 +489,6 @@
       return Math.floor(diff / 86400000);
     }
 
-    // Convert HSL (h: 0-360, s: 0-1, l: 0-1) to RGB (0-255 each)
     function hslToRgb(h, s, l) {
       h = ((h % 360) + 360) % 360;
       const c = (1 - Math.abs(2 * l - 1)) * s;
@@ -449,19 +532,17 @@
         now.getFullYear() % 100 !== 0) || now.getFullYear() % 400 === 0)
         ? 366 : 365;
 
-      // Golden angle hop per minute — each minute jumps ~137.5° around the spectrum
       const yearOffset = (now.getFullYear() * 137.508) % 360;
       const dayOffset = (doy * 47.1) % 360;
       const minuteOfDay = h * 60 + m;
       const currentHue = (minuteOfDay * 137.508 + yearOffset + dayOffset) % 360;
       const nextHue = ((minuteOfDay + 1) * 137.508 + yearOffset + dayOffset) % 360;
-      // Interpolate seconds along shortest arc between current and next hue
       let hueDelta = nextHue - currentHue;
       if (hueDelta > 180) hueDelta -= 360;
       if (hueDelta < -180) hueDelta += 360;
       const hue = ((currentHue + hueDelta * (s / 60)) % 360 + 360) % 360;
       const timeSeconds = h * 3600 + m * 60 + s;
-      const saturation = 0.5 + 0.5 * (m / 59);           // 50-100% across each hour
+      const saturation = 0.5 + 0.5 * (m / 59);
       const lightness  = 0.25 + 0.5 * (timeSeconds / 86399);
 
       const [r, g, b] = hslToRgb(hue, saturation, lightness);
@@ -488,6 +569,12 @@
       document.getElementById('swatch-r').style.backgroundColor = `rgb(${r},0,0)`;
       document.getElementById('swatch-g').style.backgroundColor = `rgb(0,${g},0)`;
       document.getElementById('swatch-b').style.backgroundColor = `rgb(0,0,${b})`;
+
+      // Store current values for capture
+      window._tt = { r, g, b, hex, pantone, lum,
+        time: document.getElementById('time').textContent,
+        date: document.getElementById('date').textContent,
+        rgb: `${r}, ${g}, ${b}` };
     }
 
     updateTime();
@@ -495,17 +582,15 @@
     setInterval(updateTime, 1000);
     setInterval(updateColour, 1000);
 
-    // Logo toggle — expand/collapse info
-    const logoBtn = document.getElementById('logo-btn');
-    logoBtn.addEventListener('click', () => {
+    // Logo toggle
+    document.getElementById('logo-btn').addEventListener('click', () => {
       document.body.classList.toggle('expanded');
-      // Dismiss tooltip when collapsing
       if (!document.body.classList.contains('expanded')) {
         document.getElementById('info-tooltip').classList.remove('visible');
       }
     });
 
-    // Info tooltip toggle
+    // Info tooltip
     const infoBtn = document.getElementById('info-btn');
     const infoTooltip = document.getElementById('info-tooltip');
     infoBtn.addEventListener('click', (e) => {
@@ -518,9 +603,176 @@
       }
     });
 
-    // Travel in Color
+    // Travel
     document.getElementById('travel-btn').addEventListener('click', () => {
       window.location.href = 'calendar.html';
+    });
+
+    // --- Capture card ---
+    const cardOverlay = document.getElementById('card-overlay');
+    const cardCanvas = document.getElementById('card-canvas');
+    const logoImg = new Image();
+    logoImg.src = 'icon.svg';
+
+    function drawCard(data) {
+      const W = 1080, H = 1350;
+      cardCanvas.width = W;
+      cardCanvas.height = H;
+      const ctx = cardCanvas.getContext('2d');
+
+      // Background
+      ctx.fillStyle = data.hex;
+      ctx.fillRect(0, 0, W, H);
+
+      const textCol = data.lum > 140 ? '#111' : '#f5f5f5';
+      const subCol = data.lum > 140 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)';
+      ctx.textAlign = 'center';
+
+      // Logo
+      const logoSize = 120;
+      ctx.drawImage(logoImg, (W - logoSize) / 2, 180, logoSize, logoSize);
+
+      // "Here is your Timetone"
+      ctx.fillStyle = subCol;
+      ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.letterSpacing = '4px';
+      ctx.fillText('Here is your Timetone', W / 2, 380);
+
+      // Time
+      ctx.fillStyle = textCol;
+      ctx.font = 'bold 120px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.letterSpacing = '8px';
+      ctx.fillText(data.time, W / 2, 540);
+
+      // Date
+      ctx.fillStyle = subCol;
+      ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.letterSpacing = '6px';
+      ctx.fillText(data.date.toUpperCase(), W / 2, 600);
+
+      // Divider line
+      ctx.strokeStyle = subCol;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 160, 660);
+      ctx.lineTo(W / 2 + 160, 660);
+      ctx.stroke();
+
+      // Colour values
+      ctx.letterSpacing = '3px';
+      const labels = ['HEX', 'RGB', 'PANTONE'];
+      const values = [data.hex, data.rgb, data.pantone];
+      let y = 730;
+
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = subCol;
+        ctx.font = '300 20px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+        ctx.letterSpacing = '6px';
+        ctx.fillText(labels[i], W / 2, y);
+
+        ctx.fillStyle = textCol;
+        ctx.font = 'bold 36px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+        ctx.letterSpacing = '3px';
+        ctx.fillText(values[i], W / 2, y + 48);
+
+        y += 120;
+      }
+
+      // Footer
+      ctx.fillStyle = subCol;
+      ctx.font = '300 18px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
+      ctx.letterSpacing = '5px';
+      ctx.fillText('TIMETONE.NONEED.DEV', W / 2, H - 60);
+    }
+
+    document.getElementById('capture-btn').addEventListener('click', () => {
+      if (!window._tt) return;
+      drawCard(window._tt);
+      cardOverlay.classList.add('visible');
+    });
+
+    document.getElementById('card-close').addEventListener('click', () => {
+      cardOverlay.classList.remove('visible');
+    });
+
+    cardOverlay.addEventListener('click', (e) => {
+      if (e.target === cardOverlay) cardOverlay.classList.remove('visible');
+    });
+
+    // Download PNG
+    document.getElementById('download-png').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `timetone-${window._tt.time.replace(/:/g, '')}.png`;
+      link.href = cardCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // Download PDF (canvas image embedded in minimal PDF)
+    document.getElementById('download-pdf').addEventListener('click', () => {
+      const jpegDataUrl = cardCanvas.toDataURL('image/jpeg', 0.95);
+      const jpegBase64 = jpegDataUrl.split(',')[1];
+      const jpegBin = atob(jpegBase64);
+
+      const imgW = cardCanvas.width;
+      const imgH = cardCanvas.height;
+      // Fit to A4 width
+      const pageW = 595.28;
+      const pageH = pageW * (imgH / imgW);
+
+      const enc = new TextEncoder();
+      const parts = [];
+      const push = (s) => parts.push(enc.encode(s));
+      const pushBin = (bin) => {
+        const a = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+        parts.push(a);
+      };
+      const offset = () => parts.reduce((s, p) => s + p.length, 0);
+
+      push('%PDF-1.4\n');
+      const xref = [];
+
+      xref.push(offset());
+      push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+      xref.push(offset());
+      push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+
+      xref.push(offset());
+      push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(2)} ${pageH.toFixed(2)}] /Contents 4 0 R /Resources << /XObject << /Img 5 0 R >> >> >>\nendobj\n`);
+
+      const stream = `q ${pageW.toFixed(2)} 0 0 ${pageH.toFixed(2)} 0 0 cm /Img Do Q`;
+      xref.push(offset());
+      push(`4 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`);
+
+      xref.push(offset());
+      push(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBin.length} >>\nstream\n`);
+      pushBin(jpegBin);
+      push('\nendstream\nendobj\n');
+
+      const xrefOff = offset();
+      push('xref\n');
+      push(`0 ${xref.length + 1}\n`);
+      push('0000000000 65535 f \n');
+      for (const o of xref) push(String(o).padStart(10, '0') + ' 00000 n \n');
+
+      push('trailer\n');
+      push(`<< /Size ${xref.length + 1} /Root 1 0 R >>\n`);
+      push('startxref\n');
+      push(`${xrefOff}\n`);
+      push('%%EOF\n');
+
+      const total = parts.reduce((s, p) => s + p.length, 0);
+      const pdf = new Uint8Array(total);
+      let pos = 0;
+      for (const p of parts) { pdf.set(p, pos); pos += p.length; }
+
+      const blob = new Blob([pdf], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.download = `timetone-${window._tt.time.replace(/:/g, '')}.pdf`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
     });
   </script>
 </body>
