@@ -233,40 +233,110 @@
     .card-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       z-index: 100;
       display: none;
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 1.2rem;
+      gap: 1rem;
+      padding: 1.5rem;
     }
 
     .card-overlay.visible {
       display: flex;
     }
 
-    .card-canvas {
-      max-width: 60vw;
-      max-height: 55vh;
-      border-radius: 0.4rem;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    .card-preview {
+      width: 100%;
+      max-width: 22rem;
+      border-radius: 0.8rem;
+      padding: 1.8rem 1.5rem;
+      text-align: center;
+    }
+
+    .card-logo {
+      width: 3rem;
+      height: 3rem;
+      margin: 0 auto 1rem;
+      display: block;
+    }
+
+    .card-tagline {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-time {
+      font-size: 2.8rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      line-height: 1.1;
+    }
+
+    .card-date {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-top: 0.3rem;
+    }
+
+    .card-divider {
+      width: 4rem;
+      height: 1px;
+      opacity: 0.3;
+      margin: 1.2rem auto;
+    }
+
+    .card-colours {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .card-colour-item {
+      text-align: center;
+    }
+
+    .card-colour-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.45;
+      margin-bottom: 0.2rem;
+    }
+
+    .card-colour-value {
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+
+    .card-footer {
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.3;
+      margin-top: 1.4rem;
     }
 
     .card-actions {
       display: flex;
       gap: 0.8rem;
-      flex-shrink: 0;
     }
 
     .card-action-btn {
-      padding: 0.6rem 1.6rem;
+      padding: 0.5rem 1.4rem;
       border: 1.5px solid #f5f5f5;
       border-radius: 2rem;
       background: none;
       color: #f5f5f5;
       font-family: 'Avenir', 'Avenir Next', 'Nunito Sans', 'Helvetica Neue', sans-serif;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;
       cursor: pointer;
@@ -280,14 +350,14 @@
 
     .card-close {
       position: fixed;
-      top: 1.2rem;
-      right: 1.5rem;
+      top: 1rem;
+      right: 1rem;
       background: none;
       border: none;
       color: #f5f5f5;
-      font-size: 2rem;
+      font-size: 1.8rem;
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 0.5;
       transition: opacity 0.3s ease;
       line-height: 1;
       z-index: 101;
@@ -306,7 +376,6 @@
       .info-btn { bottom: 1rem; right: 1rem; }
       .logo-btn { width: 4rem; height: 4rem; top: calc(50% - 2rem); left: calc(50% - 2rem); }
       body.expanded .logo-btn { top: 0.8rem; left: 0.8rem; width: 2rem; height: 2rem; }
-      .card-canvas { max-width: 70vw; max-height: 45vh; }
       .card-close { top: 0.8rem; right: 1rem; }
     }
   </style>
@@ -355,12 +424,34 @@
 
   <div class="card-overlay" id="card-overlay">
     <button class="card-close" id="card-close">&times;</button>
-    <canvas id="card-canvas" width="1080" height="1350"></canvas>
+    <div class="card-preview" id="card-preview">
+      <img src="icon.svg" class="card-logo" alt="Timetone">
+      <div class="card-tagline">Here is your Timetone</div>
+      <div class="card-time" id="card-time">00:00:00</div>
+      <div class="card-date" id="card-date"></div>
+      <div class="card-divider" id="card-divider"></div>
+      <div class="card-colours">
+        <div class="card-colour-item">
+          <div class="card-colour-label">HEX</div>
+          <div class="card-colour-value" id="card-hex"></div>
+        </div>
+        <div class="card-colour-item">
+          <div class="card-colour-label">RGB</div>
+          <div class="card-colour-value" id="card-rgb"></div>
+        </div>
+        <div class="card-colour-item">
+          <div class="card-colour-label">Pantone</div>
+          <div class="card-colour-value" id="card-pantone"></div>
+        </div>
+      </div>
+      <div class="card-footer">timetone.noneed.dev</div>
+    </div>
     <div class="card-actions">
       <button class="card-action-btn" id="download-png">Download PNG</button>
       <button class="card-action-btn" id="download-pdf">Download PDF</button>
     </div>
   </div>
+  <canvas id="card-canvas" style="display:none;"></canvas>
 
   <script>
     // Pantone colour reference table (subset of common Pantone Coated colours)
@@ -614,16 +705,30 @@
     // --- Capture card ---
     const cardOverlay = document.getElementById('card-overlay');
     const cardCanvas = document.getElementById('card-canvas');
+    const cardPreview = document.getElementById('card-preview');
     const logoImg = new Image();
     logoImg.src = 'icon.svg';
 
-    function drawCard(data) {
+    function showCard(data) {
+      const textCol = data.lum > 140 ? '#111' : '#f5f5f5';
+      const dividerCol = data.lum > 140 ? '#111' : '#f5f5f5';
+
+      cardPreview.style.backgroundColor = data.hex;
+      cardPreview.style.color = textCol;
+      document.getElementById('card-time').textContent = data.time;
+      document.getElementById('card-date').textContent = data.date;
+      document.getElementById('card-hex').textContent = data.hex;
+      document.getElementById('card-rgb').textContent = data.rgb;
+      document.getElementById('card-pantone').textContent = data.pantone;
+      document.getElementById('card-divider').style.backgroundColor = dividerCol;
+    }
+
+    function drawCanvas(data) {
       const W = 1080, H = 1080;
       cardCanvas.width = W;
       cardCanvas.height = H;
       const ctx = cardCanvas.getContext('2d');
 
-      // Background
       ctx.fillStyle = data.hex;
       ctx.fillRect(0, 0, W, H);
 
@@ -631,46 +736,38 @@
       const subCol = data.lum > 140 ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.45)';
       ctx.textAlign = 'center';
 
-      // Logo
       const logoSize = 100;
       ctx.drawImage(logoImg, (W - logoSize) / 2, 70, logoSize, logoSize);
 
-      // "Here is your Timetone"
       ctx.fillStyle = subCol;
       ctx.font = '300 38px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '4px';
       ctx.fillText('Here is your Timetone', W / 2, 230);
 
-      // Time
       ctx.fillStyle = textCol;
       ctx.font = 'bold 160px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '8px';
       ctx.fillText(data.time, W / 2, 390);
 
-      // Date
       ctx.fillStyle = subCol;
       ctx.font = '300 36px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '6px';
       ctx.fillText(data.date.toUpperCase(), W / 2, 450);
 
-      // Colour values — horizontal row
       const labels = ['HEX', 'RGB', 'PANTONE'];
       const values = [data.hex, data.rgb, data.pantone];
       const colX = [W / 2 - 300, W / 2, W / 2 + 300];
-
       for (let i = 0; i < 3; i++) {
         ctx.fillStyle = subCol;
         ctx.font = '300 28px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
         ctx.letterSpacing = '6px';
         ctx.fillText(labels[i], colX[i], 560);
-
         ctx.fillStyle = textCol;
         ctx.font = 'bold 42px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
         ctx.letterSpacing = '2px';
         ctx.fillText(values[i], colX[i], 610);
       }
 
-      // Divider
       ctx.strokeStyle = subCol;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -678,13 +775,7 @@
       ctx.lineTo(W / 2 + 200, 670);
       ctx.stroke();
 
-      // Mapping description
       ctx.fillStyle = subCol;
-      ctx.font = '300 24px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
-      ctx.letterSpacing = '3px';
-      ctx.fillText('Day \u2192 Hue  \u00B7  Minutes \u2192 Saturation  \u00B7  Time \u2192 Lightness', W / 2, 720);
-
-      // Footer
       ctx.font = '300 26px Avenir, "Avenir Next", "Nunito Sans", "Helvetica Neue", sans-serif';
       ctx.letterSpacing = '5px';
       ctx.fillText('TIMETONE.NONEED.DEV', W / 2, H - 50);
@@ -692,7 +783,8 @@
 
     document.getElementById('capture-btn').addEventListener('click', () => {
       if (!window._tt) return;
-      drawCard(window._tt);
+      showCard(window._tt);
+      drawCanvas(window._tt);
       cardOverlay.classList.add('visible');
     });
 
