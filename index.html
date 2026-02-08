@@ -247,8 +247,8 @@
     }
 
     .card-canvas {
-      max-width: 90vw;
-      max-height: 70vh;
+      max-width: 60vw;
+      max-height: 55vh;
       border-radius: 0.4rem;
       box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     }
@@ -256,6 +256,7 @@
     .card-actions {
       display: flex;
       gap: 0.8rem;
+      flex-shrink: 0;
     }
 
     .card-action-btn {
@@ -305,6 +306,8 @@
       .info-btn { bottom: 1rem; right: 1rem; }
       .logo-btn { width: 4rem; height: 4rem; top: calc(50% - 2rem); left: calc(50% - 2rem); }
       body.expanded .logo-btn { top: 0.8rem; left: 0.8rem; width: 2rem; height: 2rem; }
+      .card-canvas { max-width: 70vw; max-height: 45vh; }
+      .card-close { top: 0.8rem; right: 1rem; }
     }
   </style>
 </head>
